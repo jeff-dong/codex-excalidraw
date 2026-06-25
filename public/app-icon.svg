@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Codex Excalidraw</title>
+  <rect width="256" height="256" rx="56" fill="#1f2937"/>
+  <path d="M67 73c11-17 38-24 62-18 31 8 58 32 63 62 6 34-15 68-48 79-36 12-78-5-93-38-12-27-2-63 16-85Z" fill="#fbfaf7"/>
+  <path d="M76 129c25-32 58-48 99-48M76 129c34 5 65 21 93 48M76 129h106" fill="none" stroke="#1f2937" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="76" cy="129" r="15" fill="#f59e0b" stroke="#1f2937" stroke-width="7"/>
+  <circle cx="179" cy="81" r="15" fill="#93c5fd" stroke="#1f2937" stroke-width="7"/>
+  <circle cx="169" cy="177" r="15" fill="#86efac" stroke="#1f2937" stroke-width="7"/>
+</svg>

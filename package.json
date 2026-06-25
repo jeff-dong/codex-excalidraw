@@ -1,0 +1,30 @@
+{
+  "name": "codex-excalidraw",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 43219",
+    "test:e2e": "node scripts/test-browser-e2e.mjs",
+    "test:real-executor": "node scripts/test-real-codex-executor.mjs",
+    "test:all": "npm test && npm run test:e2e",
+    "test:mcp": "node scripts/test-mcp-flow.mjs",
+    "test:source": "node scripts/test-source-constraints.mjs",
+    "test:layout": "node scripts/test-layout-quality.mjs",
+    "test": "npm run test:source && npm run test:layout && npm run test:mcp"
+  },
+  "dependencies": {
+    "@excalidraw/excalidraw": "^0.18.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "elkjs": "^0.11.1",
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vite": "^7.0.0"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.61.0"
+  }
+}

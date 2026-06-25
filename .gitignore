@@ -1,0 +1,15 @@
+.DS_Store
+node_modules/
+dist/
+build/
+.vite/
+.env
+.env.*
+!.env.example
+canvas/
+exports/
+tmp/
+*.log
+.playwright-mcp/
+artifacts/
+adh-add-sequence-diagram.png

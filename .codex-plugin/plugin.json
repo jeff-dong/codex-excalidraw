@@ -1,0 +1,42 @@
+{
+  "name": "codex-excalidraw",
+  "version": "0.1.0+codex.20260624120500",
+  "description": "A local Excalidraw canvas plugin for Codex App, built for AI-assisted whiteboarding, structured comments, and exports.",
+  "author": {
+    "name": "Codex Excalidraw Contributors"
+  },
+  "keywords": [
+    "canvas",
+    "excalidraw",
+    "whiteboard",
+    "codex",
+    "mcp",
+    "visual-thinking"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Codex Excalidraw",
+    "shortDescription": "Draw, edit, comment, and export a local Excalidraw whiteboard inside Codex.",
+    "longDescription": "Codex Excalidraw embeds a local Excalidraw-powered infinite canvas into Codex App. It keeps scene files in the active workspace, lets Codex create and modify editable hand-drawn diagrams, supports structured comments, and exports Excalidraw, PNG, SVG, and JSON files.",
+    "developerName": "Codex Excalidraw Contributors",
+    "category": "Productivity",
+    "brandColor": "#1F2937",
+    "logo": "./assets/app-icon.svg",
+    "composerIcon": "./assets/app-icon.svg",
+    "capabilities": [
+      "Embedded Excalidraw canvas",
+      "Project-local persistence",
+      "Project session switching",
+      "AI-assisted diagram generation",
+      "Generated image insertion",
+      "Structured whiteboard comments",
+      "PNG/SVG/JSON/Excalidraw export"
+    ],
+    "defaultPrompt": [
+      "Open the Codex Excalidraw canvas for this project.",
+      "Draw an editable architecture diagram on the Excalidraw canvas.",
+      "Run Codex on the selected Excalidraw comment."
+    ]
+  }
+}
