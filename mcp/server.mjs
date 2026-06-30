@@ -83,7 +83,7 @@ const JsonRpcError = {
 
 const DRAWING_GUIDE = `# Codex Excalidraw Drawing Guide
 
-Call this once before substantial diagram creation. Then use insert_excalidraw_elements for free-form drawings or insert_excalidraw_diagram for supported structured diagrams.
+Call this once before substantial diagram creation. Then choose the drawing path internally from the user's communication goal. Users should describe what they want to explain; they should not need to know internal diagram kinds such as flowchart or fireworks.
 
 ## Core element specs
 
@@ -94,7 +94,7 @@ Call this once before substantial diagram creation. Then use insert_excalidraw_e
 - Use customData.codex.semanticId for every durable concept you may edit later.
 - Draw in reading order: background zone, local node, label, connector, then next node.
 - For arrow and line elements, points must be local coordinates relative to x/y. Example: x=100, y=200, points=[[0,0],[300,0]], not [[100,200],[400,200]].
-- For flowcharts, use rows or columns with stable spacing. Keep sibling nodes aligned on the same x or y coordinate.
+- For process and relationship diagrams, use rows or columns with stable spacing. Keep sibling nodes aligned on the same x or y coordinate.
 - For charts, reserve a title band, plot area, axis labels, and legend area. Do not mix chart marks with explanatory notes in the same area.
 - For dense diagrams, split into sections and add cameraUpdate entries before each section.
 - Prefer fewer large elements over many small elements. If a concept needs long text, widen the node instead of shrinking the font.
@@ -102,16 +102,27 @@ Call this once before substantial diagram creation. Then use insert_excalidraw_e
 - Targets must stay structural: selected ids, explicit elementIds, comment targets, action targets, or semanticIds.
 - For production-like or user-facing diagrams, call visual_validate_excalidraw after insertion to get a local rendered preview and qualityReport.
 
-## Structured sequence diagrams
+## Diagram Routing
 
-Use insert_excalidraw_diagram with kind: "sequence" for sequence diagrams, handoff timelines, cross-system message flows, and other lane-based process drawings. Provide structured data instead of hand-placing every x/y coordinate:
+Choose a structured route from the user's intent and drawing best practices. Do not ask the user to choose internal kinds, and do not require the user's prompt to mention implementation labels.
+
+- Lane-based interactions, handoff timelines, and cross-system message flows: call insert_excalidraw_diagram with the internal sequence route and provide participants, messages, notes, and gates.
+- Presentation-grade architecture, system maps, product diagrams, and README/slide-friendly visuals: call insert_excalidraw_diagram with the internal curated architecture route. Use containers, stable node ids, node type labels, short labels, sublabels, routed connectors, and a legend.
+- Formal data or code structure diagrams: call insert_excalidraw_diagram with the appropriate internal class, er, state, mindmap, graph, or node-edge route. Provide structured nodes and edges.
+- Free-form explanation, visual metaphors, annotations, partial edits, or unsupported shapes: use insert_excalidraw_elements with editable primitives.
+
+When invoking insert_excalidraw_diagram, still pass the required internal kind value in the tool payload. Keep that routing decision invisible in user-facing prompts unless the user explicitly asks about implementation details.
+
+## Structured Lane Diagrams
+
+For lane-based interaction diagrams, provide structured data instead of hand-placing every x/y coordinate:
 
 - participants: ordered lanes with stable id and label.
 - messages: ordered arrows with id, from, to, label, and optional rowGap.
 - notes: rectangular annotations attached by afterMessageId, or by lane/from/to.
 - gates: diamond decision nodes attached by afterMessageId, or by lane/from/to.
 
-The sequence layout engine computes lane spacing, lifelines, local arrow points, readable text sizes, attachment placement, viewport focus, and semantic ids. Do not use this tool for unrelated free-form diagrams.
+The lane layout engine computes lane spacing, lifelines, local arrow points, readable text sizes, attachment placement, viewport focus, and semantic ids. Do not use this route for unrelated free-form diagrams.
 
 ## Recommended palette
 
@@ -158,7 +169,7 @@ The live canvas validates and repairs common layout problems before inserting el
 - overlapping node/text boxes
 
 Read the layoutValidation field returned by insert_excalidraw_elements. If issueCount is high, simplify the diagram or redraw it in sections instead of adding more small elements.
-If layoutValidation.needsRedraw is true, do not keep patching the broken batch. Split the drawing into smaller sections or use insert_excalidraw_diagram with an explicit kind.
+If layoutValidation.needsRedraw is true, do not keep patching the broken batch. Split the drawing into smaller sections or choose the appropriate structured diagram route before inserting again.
 Read qualityReport for readability, density, and overlap risk. A fail status means the scene should be fixed before user delivery.
 
 ## Boundaries
@@ -402,10 +413,141 @@ function graphDiagramSchema() {
   }
 }
 
+function fireworksDiagramSchema() {
+  const pointSchema = { type: 'array', items: { type: 'number' }, minItems: 2, maxItems: 2 }
+  const tagSchema = {
+    type: 'object',
+    properties: {
+      label: { type: 'string' }
+    },
+    required: ['label'],
+    additionalProperties: false
+  }
+  return {
+    type: 'object',
+    properties: {
+      title: { type: 'string' },
+      subtitle: { type: 'string' },
+      style: {
+        anyOf: [
+          { type: 'number' },
+          { type: 'string' }
+        ]
+      },
+      x: { type: 'number' },
+      y: { type: 'number' },
+      width: { type: 'number' },
+      height: { type: 'number' },
+      layout: {
+        type: 'object',
+        properties: {
+          x: { type: 'number' },
+          y: { type: 'number' }
+        },
+        additionalProperties: false
+      },
+      containers: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            label: { type: 'string' },
+            subtitle: { type: 'string' },
+            x: { type: 'number' },
+            y: { type: 'number' },
+            width: { type: 'number' },
+            height: { type: 'number' },
+            fill: { type: 'string' },
+            stroke: { type: 'string' }
+          },
+          required: ['id'],
+          additionalProperties: false
+        }
+      },
+      nodes: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            label: { type: 'string' },
+            kind: { type: 'string' },
+            shape: { type: 'string' },
+            type_label: { type: 'string' },
+            typeLabel: { type: 'string' },
+            sublabel: { type: 'string' },
+            subtitle: { type: 'string' },
+            x: { type: 'number' },
+            y: { type: 'number' },
+            width: { type: 'number' },
+            height: { type: 'number' },
+            fill: { type: 'string' },
+            stroke: { type: 'string' },
+            text_fill: { type: 'string' },
+            textColor: { type: 'string' },
+            type_fill: { type: 'string' },
+            typeColor: { type: 'string' },
+            sub_fill: { type: 'string' },
+            subColor: { type: 'string' },
+            tags: { type: 'array', items: tagSchema }
+          },
+          required: ['id', 'label'],
+          additionalProperties: false
+        }
+      },
+      arrows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            source: { type: 'string' },
+            target: { type: 'string' },
+            source_port: { type: 'string' },
+            target_port: { type: 'string' },
+            flow: { type: 'string' },
+            label: { type: 'string' },
+            color: { type: 'string' },
+            dashed: { type: 'boolean' },
+            label_dx: { type: 'number' },
+            label_dy: { type: 'number' },
+            route_points: { type: 'array', items: pointSchema },
+            corridor_x: { type: 'array', items: { type: 'number' } },
+            corridor_y: { type: 'array', items: { type: 'number' } }
+          },
+          required: ['id', 'source', 'target'],
+          additionalProperties: false
+        }
+      },
+      legend: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            flow: { type: 'string' },
+            label: { type: 'string' },
+            color: { type: 'string' }
+          },
+          required: ['flow', 'label'],
+          additionalProperties: false
+        }
+      },
+      legend_position: { type: 'string' },
+      legend_x: { type: 'number' },
+      legend_y: { type: 'number' },
+      metadata: { type: 'object', additionalProperties: true }
+    },
+    required: ['nodes'],
+    additionalProperties: false
+  }
+}
+
 function diagramSchema() {
   return {
     oneOf: [
       sequenceDiagramSchema(),
+      fireworksDiagramSchema(),
       graphDiagramSchema()
     ]
   }
@@ -644,14 +786,14 @@ function toolDefinitions() {
     {
       name: Tools.INSERT_DIAGRAM,
       title: 'Insert Excalidraw Diagram',
-      description: 'Insert a supported structured diagram through a layout engine and shared Excalidraw renderer. Use kind=sequence for lane-based sequence diagrams; use flowchart, graph, class, er, state, or mindmap for node-edge diagrams. Do not hand-place every node or arrow.',
+      description: 'Insert a supported structured diagram through a layout engine and shared Excalidraw renderer. Choose the internal kind from the user goal and drawing best practices: lane interactions, curated architecture visuals, formal structure diagrams, or node-edge relationships. Do not ask the user to choose internal kind names, and do not hand-place every node or arrow when a structured route fits.',
       inputSchema: {
         type: 'object',
         properties: {
           ...baseArgs,
           batchId: { type: 'string' },
           sourceFormat: { type: 'string', enum: ['ir'] },
-          kind: { type: 'string', enum: ['sequence', 'flowchart', 'graph', 'class', 'er', 'state', 'mindmap'] },
+          kind: { type: 'string', enum: ['sequence', 'fireworks', 'flowchart', 'graph', 'class', 'er', 'state', 'mindmap'] },
           rendering: {
             type: 'object',
             properties: {
@@ -2047,7 +2189,7 @@ async function handleRequest(message) {
         version: SERVER_VERSION
       },
       instructions:
-        'Use structured Codex Excalidraw tools to read and write the canvas. For substantial diagram creation, call read_excalidraw_drawing_guide once. For sequence diagrams and lane-based process drawings, prefer insert_excalidraw_diagram with structured participants, messages, notes, and gates instead of hand-placing arrows. For user-visible drawing, editing, image insertion, selection-based work, or export workflows, call open_excalidraw_canvas first to start or reuse the live local canvas service. Do not use browser-control clicking as the data path. Use get_excalidraw_session when project context is unclear, and prefer selected element ids, comment target ids, action target ids, or customData.codex.semanticId for multi-turn edits. Use project-local checkpoints before risky edits. When the page submits an action, call get_pending_excalidraw_actions, claim_excalidraw_action, execute the requested edit with structured tools, then complete_excalidraw_action.'
+        'Use structured Codex Excalidraw tools to read and write the canvas. For substantial diagram creation, call read_excalidraw_drawing_guide once, infer the appropriate structured drawing route from the user goal, and keep internal kind names out of user-facing prompts unless the user asks about implementation details. For user-visible drawing, editing, image insertion, selection-based work, or export workflows, call open_excalidraw_canvas first to start or reuse the live local canvas service. Do not use browser-control clicking as the data path. Use get_excalidraw_session when project context is unclear, and prefer selected element ids, comment target ids, action target ids, or customData.codex.semanticId for multi-turn edits. Use project-local checkpoints before risky edits. When the page submits an action, call get_pending_excalidraw_actions, claim_excalidraw_action, execute the requested edit with structured tools, then complete_excalidraw_action.'
     })
     return
   }

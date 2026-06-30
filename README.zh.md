@@ -5,7 +5,7 @@
 <h1 align="center">Codex Excalidraw</h1>
 
 <p align="center">
-  面向 Codex App 的本地优先 Excalidraw 画布插件。
+  面向 Codex App 的本地优先、可编辑 Excalidraw 画布插件。
 </p>
 
 <p align="center">
@@ -16,132 +16,106 @@
 <p align="center">
   <img src="https://img.shields.io/badge/status-local%20MVP-2563eb" alt="状态：本地 MVP" />
   <img src="https://img.shields.io/badge/Codex-plugin-111827" alt="Codex 插件" />
-  <img src="https://img.shields.io/badge/Excalidraw-powered-6965db" alt="Excalidraw 驱动" />
+  <img src="https://img.shields.io/badge/Excalidraw-editable-6965db" alt="可编辑 Excalidraw" />
 </p>
 
-Codex Excalidraw 是一个本地优先的 Excalidraw 白板插件。它为每个项目提供一个可编辑的手绘风格画布，并让 Codex 通过 MCP 工具读取选区、执行结构化修改、处理注释、插入生成图片和导出结果，而不是依赖浏览器控制来点击页面。
+Codex Excalidraw 给 Codex App 增加了一个实时 Excalidraw 白板。它可以让 Codex
+绘制可编辑架构图、优化选中的画布内容、处理白板评论、把生成图片插入选中的区域，并导出 README 可用的素材；所有画布状态都保存在当前项目里。
 
-> 状态：本地 MVP。插件脚手架、技能、MCP Server、浏览器画布、项目级本地存储和端到端测试已经完成。插件市场发布素材仍在准备中。
+它的目标很明确：用户只需要描述想表达什么，不需要理解内部到底走哪种绘图实现。Codex 会根据用户目标自动选择绘图路线，应用布局最佳实践，并通过结构化 MCP 工具写入原生 Excalidraw 元素。
 
-## 功能亮点
+![Codex Excalidraw 可编辑 AI 架构图](docs/media/readme/editable-ai-diagrams.png)
 
-- 基于 Excalidraw 的可编辑无限画布。
-- 画布数据按当前项目本地保存。
-- 支持 Codex 绘制、更新、删除、插图、评论和导出。
-- 类似 Codex code comment 的白板注释能力，并绑定到选中的元素。
-- `Run with Codex` 本地执行器流程，支持多轮注释执行、浏览器进度渲染和复制指令兜底。
-- 吸收官方 MCP 的优秀能力：绘图指南、结构化 `cameraUpdate` 视口聚焦、项目内 checkpoint、结构化伪元素删除。
-- 结构化 Diagram IR 覆盖序列图、流程图、类图、ER、状态图、思维导图和通用 graph，并统一进入 Excalidraw 渲染层。
-- 生成图支持浏览器端分步绘制，并在插入前做 layout validation，自动修复过小节点、低对比度、文字溢出和节点重叠风险。
-- 多项目 session 切换，并验证项目边界。
-- 支持导出 `.excalidraw`、JSON、SVG 和 PNG。
-- 已覆盖核心用户动线的真实浏览器 E2E 测试。
+## 能做什么
 
-## 截图和演示
+- 根据自然语言和项目上下文生成可编辑图。
+- 使用 Excalidraw 原生无限画布、工具栏、形状、文本和图片。
+- 选中一个矩形，让 Codex 在这个区域内生成写实图片。
+- 给选中的元素添加评论，然后点击 `Run with Codex` 从画布直接执行任务。
+- 在评论列表中删除已完成或未执行的评论。
+- 让 Codex 更新、删除、换色、解释或优化选中的元素。
+- 导出 `.excalidraw`、JSON、SVG 和浏览器渲染 PNG。
+- 在多个项目画布目录之间切换，并保持项目数据隔离。
 
-这里预留截图和视频位置，方便先发布仓库，再补齐最终演示素材。
+## 截图
 
-| 素材 | 建议路径 | 说明 |
-| --- | --- | --- |
-| 产品截图 | `docs/media/canvas-overview.png` | 主画布、顶部工具栏和注释面板 |
-| 评论流程 GIF | `docs/media/comment-action-flow.gif` | 选中元素、添加评论、交给 Codex 执行 |
-| 图片插入截图 | `docs/media/generated-image-insert.png` | 生成图片并插入到选中的区域 |
-| 演示视频 | `docs/media/demo.mp4` | 60-90 秒产品 walkthrough |
+### 自由画布 + 框内 AI 生成
+
+在 Excalidraw 自由画布里画出或选中一个边界区域，然后让 Codex 在这个区域内生成图片。生成结果会作为原生 Excalidraw 图片元素插入，并保存在当前项目中。
+
+![Codex Excalidraw 自由画布中选中矩形并让 AI 在框内生成图片](docs/media/readme/free-canvas-ai-in-box.png)
+
+### 快速开始流程
+
+首次使用路径是：安装插件、打开项目画布、让 Codex 生成图、通过选区或评论迭代，最后导出 README 可用素材。
+
+![README 从安装到截图的快速开始流程](docs/media/readme/quick-start-install-to-screenshot.png)
+
+### 可编辑反馈闭环
+
+生成后的图仍然可编辑。Codex 通过选区、评论目标、语义 ID 和 action ID 定位元素，而不是靠可见文字猜测要改哪里。
+
+![评论、结构化目标、校验和导出的可编辑反馈闭环](docs/media/readme/editable-feedback-loop.png)
 
 ## 工作原理
 
 ```mermaid
 flowchart LR
   User["用户"] --> Canvas["Excalidraw 画布"]
-  User --> Chat["Codex Chat"]
-  Canvas --> Store["project/canvas/excalidraw"]
-  Chat --> Skills["Codex Skills"]
-  Skills --> MCP["Codex Excalidraw MCP"]
-  Canvas --> Executor["本地执行器"]
-  Executor --> Skills
+  User --> Codex["Codex 对话 / 技能"]
+  Canvas --> Comments["选区 + 评论"]
+  Comments --> Executor["Run with Codex"]
+  Codex --> MCP["Codex Excalidraw MCP"]
+  Executor --> MCP
   MCP --> API["本地 Canvas API"]
-  MCP --> Store
   API --> Canvas
-  Store --> Exports["exports / assets / comments / actions"]
+  Canvas --> Store["project/canvas/excalidraw"]
+  MCP --> Store
+  Store --> Assets["assets / exports / checkpoints"]
 ```
 
-浏览器画布是用户操作界面。Codex 使用结构化 MCP/API 调用作为数据通道。浏览器点击和截图不是绘制或编辑画布的机制。
+浏览器画布是用户操作界面。Codex 使用 MCP/API/file 数据通道来绘制和编辑，浏览器点击不是绘图机制。
 
-如果本机可用 Codex CLI，画布可以从评论直接提交结构化 action。页面会保持可操作，并显示执行进度；本地执行器会 claim action、调用 MCP 工具、完成 action 并 resolve comment。如果本地执行器不可用，按钮会退回到复制明确指令，由用户粘贴到 Codex Chat 中执行。
+生成图时，Codex 会先读取绘图指南，再根据用户想表达的内容选择内部绘图路线。用户不需要在提示词里选择 `flowchart` 或 `fireworks` 这类实现名称。
 
-## 环境要求
+## 绘图质量
+
+Codex Excalidraw 会尽量把图渲染为原生 Excalidraw 元素，而不是压扁成截图。目前支持：
+
+- 架构方案图：分组区域、类型节点、箭头和图例。
+- 泳道式流程图和序列视图。
+- 节点关系图：flow、graph、class、ER、state、mindmap 等结构。
+- 浏览器端渐进式绘制，让生成内容出现在实时画布上。
+- 插入前做布局校验和修复，降低文字溢出、低对比度、节点过小和区块重叠风险。
+- 给元素写入结构化语义 ID，后续编辑不依赖模糊文本匹配。
+
+只有当用户明确要求图片、照片、截图、bitmap，或源产物天然就是图片时，才会使用栅格图片。
+
+## 安装
+
+这个项目作为本地 Codex 插件安装，不是公开 npm 包。
+
+### 环境要求
 
 - Node.js `^20.19.0` 或 `>=22.12.0`
 - npm
 - 支持插件的 Codex CLI/App
-- 如果要直接点击 `Run with Codex` 本地执行，需要 Codex CLI 在 `PATH` 中
-- 运行 `npm run test:e2e` 需要 Google Chrome
+- 如果要使用本地 `Run with Codex` 执行器，需要 Codex CLI 在 `PATH` 中
+- 运行浏览器 E2E 测试需要 Google Chrome
 
-核心画布不需要付费 API Key。AI 模型调用和外部图片生成是否付费，取决于你选择的 Codex provider 或图片生成模型。
-
-## 安装
-
-```bash
-git clone https://github.com/<owner>/codex-excalidraw.git
-cd codex-excalidraw
-npm install
-```
-
-开发模式启动画布：
-
-```bash
-npm run dev
-```
-
-按插件实际启动方式，为某个用户项目启动画布：
-
-```bash
-./scripts/start-canvas.sh /path/to/user/project
-```
-
-启动脚本会创建项目级画布目录，并写入 live session 文件：
-
-```text
-/path/to/user/project/canvas/excalidraw/session.json
-```
-
-如果默认端口被占用，脚本会自动选择下一个可用本地端口，并写入 `session.json`。
-
-## 安装到 Codex Agent
-
-这个仓库按 Codex 插件形态组织：
-
-```text
-.codex-plugin/plugin.json
-.mcp.json
-skills/
-mcp/
-scripts/
-src/
-```
-
-你可以把下面这段发给 Codex，让它帮你安装：
-
-```text
-Please install the Codex Excalidraw plugin from https://github.com/<owner>/codex-excalidraw.git.
-Clone it into ~/plugins/codex-excalidraw, verify that .codex-plugin/plugin.json exists,
-make sure the personal marketplace points to ./plugins/codex-excalidraw,
-run codex plugin marketplace add ~,
-then run codex plugin add codex-excalidraw@personal.
-After installing, validate the plugin and tell me whether I should start a new conversation to load the new skills and MCP tools.
-```
-
-手动本地安装：
+### 1. 克隆并构建
 
 ```bash
 mkdir -p ~/plugins
-git clone https://github.com/<owner>/codex-excalidraw.git ~/plugins/codex-excalidraw
+git clone https://github.com/jeff-dong/codex-excalidraw.git ~/plugins/codex-excalidraw
 cd ~/plugins/codex-excalidraw
 npm install
 npm run build
 ```
 
-确认 `~/.agents/plugins/marketplace.json` 中包含 personal marketplace 的插件条目：
+### 2. 注册 personal marketplace
+
+创建或更新 `~/.agents/plugins/marketplace.json`：
 
 ```json
 {
@@ -166,116 +140,57 @@ npm run build
 }
 ```
 
-注册 personal marketplace 并安装插件：
+安装插件：
 
 ```bash
 codex plugin marketplace add ~
-codex plugin marketplace list
 codex plugin list --available
 codex plugin add codex-excalidraw@personal
 ```
 
-安装后，开启一个新的 Codex App 对话，让新的 skills 和 MCP server 被加载。烟测提示词：
+安装完成后，开启一个新的 Codex App 对话，让新的 skills 和 MCP server 被加载。
+
+## 快速开始
+
+打开当前项目画布：
 
 ```text
 Open the Codex Excalidraw canvas for this project.
 ```
 
-插件提供这些技能：
-
-- `codex-excalidraw:excalidraw-open-canvas`
-- `codex-excalidraw:excalidraw-draw`
-- `codex-excalidraw:excalidraw-comments`
-- `codex-excalidraw:excalidraw-image`
-- `codex-excalidraw:excalidraw-export`
-- `codex-excalidraw:excalidraw-optimize-sketch`
-
-## 使用方式
-
-### 1. 打开项目画布
-
-在 Codex 中输入：
+生成项目架构图：
 
 ```text
-Open the Codex Excalidraw canvas for this project.
+根据这个项目的架构设计绘制一个架构方案图。
 ```
 
-Codex 应该为当前项目启动或复用本地服务，并返回准确的本地 URL。
-
-### 2. 让 Codex 绘制或修改
-
-示例提示词：
+优化选中的内容：
 
 ```text
-Draw an editable architecture diagram for this project.
+让选中的图更容易阅读，并修复重叠标签。
 ```
+
+在选中矩形内生成图片：
 
 ```text
-Modify the selected elements and make the data flow easier to read.
+生成一张写实的产品文档配图，并插入到选中的矩形里。
 ```
 
-```text
-Optimize my selected rough sketch into a clean editable diagram, but keep the original beside it.
-```
-
-修改目标必须来自结构化信息：选中的元素、明确元素 ID、comment target、action target，或 `customData.codex.semanticId`。MCP 层不会通过模糊文本匹配来判断要修改哪个对象。
-
-### 3. 把注释作为 Codex 任务
-
-在画布中：
-
-1. 选择一个或多个元素。
-2. 打开注释面板。
-3. 添加一条描述修改意图的评论。
-4. 点击 `Run with Codex`。
-
-如果本地执行器可用，浏览器会显示执行进度，Codex 在后台处理这条 action。如果执行器不可用，或在 Settings 中切到复制指令模式，按钮会复制一条可以粘贴到 Codex 的命令：
+处理画布评论：
 
 ```text
 Process the pending Excalidraw actions.
 ```
 
-Codex 会通过 MCP 读取 queued action，claim 后只编辑该 comment 记录的结构化 target，完成 action，并 resolve comment。
-
-### 4. 插入生成图片
-
-用户手动插入图片时，使用 Excalidraw 原生图片工具。
-
-Codex 自动插入图片时，使用 `insert_excalidraw_image`，并要求结构化放置目标，例如选中的矩形或 comment target：
+导出当前画布：
 
 ```text
-Generate a ramen ad image and insert it into the selected rectangle.
+Export the current canvas as excalidraw, json, svg, and png.
 ```
 
-如果是给一个有边界的目标区域生成图片，Codex 应先读取目标元素几何，把目标宽高比写入生图提示词，并用
-`placement.fit: "cover"` 通过 Excalidraw 原生裁切铺满目标区域。只有用户要求完整保留图片时才用 `contain`；
-只有用户明确接受变形时才用 `stretch`。
+## 多项目画布
 
-生成资产只会写入当前项目：
-
-```text
-canvas/excalidraw/assets/
-```
-
-### 5. 导出
-
-用 Codex 做 headless 导出：
-
-```text
-Export the current canvas as excalidraw, json, and svg.
-```
-
-用画布顶部 Export 下拉菜单导出浏览器渲染的 PNG 和官方 Excalidraw SVG。
-
-导出文件会保存到：
-
-```text
-canvas/excalidraw/exports/
-```
-
-## 项目数据
-
-每个用户项目保留自己的画布状态：
+每个项目都有自己的画布状态目录：
 
 ```text
 canvas/excalidraw/
@@ -292,7 +207,25 @@ canvas/excalidraw/
   checkpoints/
 ```
 
-这个边界是产品约束。画布资产和导出文件不应该写入插件仓库、其他项目或任意临时目录。
+如果想为另一个目录创建干净画布，可以在那个项目里打开画布，也可以显式指定目录启动：
+
+```bash
+./scripts/start-canvas.sh /path/to/user/project
+```
+
+实时画布也可以通过项目选择器或 MCP 工具 `switch_excalidraw_project` 切换项目。生成资产和导出结果会留在当前项目边界内。
+
+## 评论和本地执行器
+
+右侧注释面板可以把画布反馈变成结构化 Codex 任务：
+
+1. 在画布中选择一个或多个元素。
+2. 添加一条描述修改意图的评论。
+3. 点击 `Run with Codex`。
+4. 在右侧面板查看执行进度。
+5. 不再需要时，可以删除这条评论。
+
+如果本地执行器不可用，按钮会退回到复制指令，用户可以粘贴到 Codex Chat 执行。action 通过 MCP claim 和 complete，因此 Codex 只会编辑选区或评论绑定的结构化目标。
 
 ## MCP 工具
 
@@ -343,32 +276,20 @@ npm run test:all
 | `npm run dev` | 启动 Vite 画布应用 |
 | `./scripts/start-canvas.sh <projectDir>` | 启动项目级画布服务 |
 | `./scripts/start-mcp.sh` | 启动插件使用的 MCP server |
-| `npm test` | 运行源码约束和 MCP/API 流程测试 |
+| `npm test` | 运行源码约束、布局检查和 MCP/API 流程测试 |
 | `npm run test:e2e` | 用真实 Chrome 跑临时画布 E2E |
 | `npm run test:real-executor` | 真实触发 Codex CLI，本地执行评论 action，并保留截图 |
 | `npm run test:all` | 同时运行 MCP/API 测试和浏览器 E2E |
 | `npm run build` | 构建前端 bundle |
 
-`npm run test:e2e` 覆盖真实用户操作：打开项目画布、浏览器连接的 Excalidraw 原生插入、真实鼠标选区、评论、mock 本地执行器的 `Run with Codex` 进度渲染和不白屏断言、action/comment 状态同步、执行器设置扫描、图片插入并做像素级可见性验证、项目切换、导出、刷新恢复、移动端加载和产物边界检查。
+## 安全和边界
 
-`npm run test:real-executor` 会真实触发 Codex CLI 和模型调用，适合发布前或本机验收时运行。它会保留 `01-real-executor-running.png` 和 `02-real-executor-completed.png`，用于检查执行中的页面表现。
-
-保留 E2E 截图用于调试：
-
-```bash
-CODEX_EXCALIDRAW_KEEP_E2E=1 npm run test:e2e
-```
-
-## 设计原则
-
-- 优先使用 Excalidraw 原生 API。
-- 用户绘制工具保留在 Excalidraw 原生工具栏中。
-- Codex 操作走 MCP/API/file 数据通道，而不是浏览器控制通道。
-- 本地执行器通过结构化 action id、target ids 和 MCP 消费任务，不通过视觉自动化。
-- 所有修改必须有结构化 target。
-- 不通过模糊文本、元素文本或 comment 文本判断修改目标。
-- 生成资产和导出结果必须留在当前项目内。
-- 尽量保留可编辑元素；只有用户明确要求图片、照片、截图，或源产物天然是 bitmap 时才使用栅格图。
+- 画布状态本地优先，保存在当前项目中。
+- 生成资产和导出文件写入 `canvas/excalidraw/`。
+- 编辑必须有结构化目标：选区、元素 ID、评论目标、action 目标或 `customData.codex.semanticId`。
+- MCP 层不通过模糊元素文本或评论文本做编辑路由。
+- checkpoint 保存在项目内，方便检查或恢复高风险修改。
+- 核心画布不需要付费 API Key。AI 模型和图片生成成本取决于你选择的 Codex provider 或图片模型。
 
 ## 文档
 
@@ -378,17 +299,9 @@ CODEX_EXCALIDRAW_KEEP_E2E=1 npm run test:e2e
 - [设计 AI Brief](docs/design-ai-brief.md)
 - [Skill Runtime Boundaries](skills/RUNTIME_BOUNDARIES.md)
 
-## Roadmap
+## 状态
 
-- 补齐最终截图和演示视频。
-- 完成插件市场打包和验证。
-- 等 Codex App 暴露稳定 panel API 后，接入更原生的 Codex App panel。
-- 扩展图表导入路径，包括 Mermaid-to-Excalidraw。
-- 增强 comment pin 和 review history。
-
-## 仓库状态
-
-当前仓库包含本地 MVP 和 Codex 插件脚手架。它可以用于本地开发和插件验证，但在插件市场打包、review 素材和公开文档稳定之前，应视为 pre-release。
+当前仓库包含本地 MVP 和 Codex 插件脚手架。画布、skills、MCP server、项目级本地存储、评论执行闭环、图片插入、导出和浏览器 E2E 覆盖已经完成。插件市场打包和公开分发稳定前，仍建议按 pre-release 使用。
 
 ## License
 

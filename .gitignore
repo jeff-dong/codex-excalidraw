@@ -1,4 +1,8 @@
 .DS_Store
+.claude/
+.npmrc
+.yarnrc
+.pnpmrc
 node_modules/
 dist/
 build/

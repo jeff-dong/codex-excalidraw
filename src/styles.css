@@ -2262,6 +2262,10 @@ textarea {
   font-weight: 560;
 }
 
+.text-button--danger {
+  color: var(--fail);
+}
+
 .app-shell--dark .text-button {
   color: #d7d5ce;
   background: #292925;
@@ -2276,6 +2280,12 @@ textarea {
 .text-button:hover {
   color: var(--text);
   background: var(--hover);
+}
+
+.text-button--danger:hover:not(:disabled) {
+  color: var(--fail);
+  background: rgba(196, 69, 58, .08);
+  border-color: rgba(196, 69, 58, .38);
 }
 
 .text-button:disabled {

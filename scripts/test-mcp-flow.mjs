@@ -221,8 +221,38 @@ async function writeSelection(projectDir, element) {
   )
 }
 
-function findBySemantic(scene, semanticId) {
-  return scene.elements.find((element) => !element.isDeleted && element.customData?.codex?.semanticId === semanticId)
+function findBySemantic(scene, semanticId, batchId = null) {
+  return scene.elements.find((element) =>
+    !element.isDeleted &&
+    element.customData?.codex?.semanticId === semanticId &&
+    (!batchId || element.customData?.codex?.batchId === batchId)
+  )
+}
+
+function liveIdsForBatch(scene, batchId) {
+  return new Set(
+    scene.elements
+      .filter((element) => !element.isDeleted && element.customData?.codex?.batchId === batchId)
+      .map((element) => element.id)
+  )
+}
+
+function assertBatchesDoNotShareElementIds(scene, leftBatchId, rightBatchId) {
+  const leftIds = liveIdsForBatch(scene, leftBatchId)
+  const rightIds = liveIdsForBatch(scene, rightBatchId)
+  const shared = [...leftIds].filter((id) => rightIds.has(id))
+  assert.deepEqual(shared, [], `${leftBatchId} and ${rightBatchId} should not share element ids.`)
+}
+
+function assertTextStartsInsideNode(scene, nodeSemanticId, textSemanticId) {
+  const node = findBySemantic(scene, nodeSemanticId)
+  const text = findBySemantic(scene, textSemanticId)
+  assert.ok(node, `Expected node ${nodeSemanticId} to exist.`)
+  assert.ok(text, `Expected text ${textSemanticId} to exist.`)
+  assert.ok(text.x >= node.x, `${textSemanticId} should not start left of ${nodeSemanticId}.`)
+  assert.ok(text.y >= node.y, `${textSemanticId} should not start above ${nodeSemanticId}.`)
+  assert.ok(text.x < node.x + node.width, `${textSemanticId} should start inside ${nodeSemanticId}.`)
+  assert.ok(text.y < node.y + node.height, `${textSemanticId} should start inside ${nodeSemanticId}.`)
 }
 
 async function runFileBackedScenario(projectDir) {
@@ -486,6 +516,121 @@ async function runFileBackedScenario(projectDir) {
     assert.ok(findBySemantic(scene, 'flowchart_node_intent'))
     assert.ok(findBySemantic(scene, 'flowchart_node_renderer'))
     assert.ok(findBySemantic(scene, 'flowchart_edge_renderer_to_scene'))
+
+    const fireworksDiagram = await client.callTool('insert_excalidraw_diagram', {
+      ...baseArgs,
+      batchId: 'fireworks_mem0_case',
+      sourceFormat: 'ir',
+      kind: 'fireworks',
+      diagram: {
+        title: 'Mem0 Memory Architecture',
+        subtitle: 'Personalized AI memory layer with extraction, storage, retrieval, and context injection.',
+        style: 7,
+        width: 1180,
+        height: 760,
+        layout: { x: 980, y: 1240 },
+        containers: [
+          { id: 'application_layer', label: 'Application Layer', x: 40, y: 120, width: 260, height: 130 },
+          { id: 'memory_layer', label: 'Memory Orchestration', x: 340, y: 120, width: 360, height: 330 },
+          { id: 'storage_layer', label: 'Long-Term Memory Stores', x: 740, y: 120, width: 360, height: 330 },
+          { id: 'runtime_layer', label: 'Runtime Personalization', x: 340, y: 500, width: 760, height: 160 }
+        ],
+        nodes: [
+          { id: 'client', kind: 'document', label: 'App / Agent', type_label: 'input', sublabel: 'chat + tools', x: 80, y: 160, width: 180, height: 76 },
+          { id: 'manager', kind: 'double_rect', label: 'Memory Manager', type_label: 'control', sublabel: 'policy + identity', x: 390, y: 145, width: 240, height: 96 },
+          { id: 'extractor', kind: 'rect', label: 'Fact Extractor', type_label: 'write path', sublabel: 'summaries + triples', x: 390, y: 300, width: 240, height: 96 },
+          { id: 'vector_store', kind: 'cylinder', label: 'Vector Store', type_label: 'semantic', sublabel: 'embeddings', x: 800, y: 145, width: 220, height: 96 },
+          { id: 'graph_store', kind: 'circle_cluster', label: 'Graph Store', type_label: 'relational', sublabel: 'entities + edges', x: 800, y: 300, width: 220, height: 96 },
+          { id: 'retriever', kind: 'rect', label: 'Memory Retriever', type_label: 'read path', sublabel: 'rank + merge', x: 410, y: 535, width: 240, height: 96 },
+          { id: 'llm', kind: 'double_rect', label: 'LLM Response', type_label: 'output', sublabel: 'context-aware', x: 800, y: 535, width: 220, height: 96 }
+        ],
+        arrows: [
+          { id: 'client_manager', source: 'client', target: 'manager', source_port: 'right', target_port: 'left', flow: 'control', label: 'requests' },
+          { id: 'manager_extractor', source: 'manager', target: 'extractor', source_port: 'bottom', target_port: 'top', flow: 'write', label: 'extract', label_dx: 62 },
+          { id: 'extractor_vector', source: 'extractor', target: 'vector_store', source_port: 'right', target_port: 'left', flow: 'write', label: 'embeddings', label_dy: -12 },
+          { id: 'extractor_graph', source: 'extractor', target: 'graph_store', source_port: 'right', target_port: 'left', flow: 'data', label: 'facts + relations', label_dy: 22 },
+          { id: 'manager_retriever', source: 'manager', target: 'retriever', source_port: 'bottom', target_port: 'top', flow: 'read', label: 'retrieve', corridor_x: [510] },
+          { id: 'retriever_vector', source: 'retriever', target: 'vector_store', source_port: 'right', target_port: 'left', flow: 'read', label: 'similarity', route_points: [[700, 583], [700, 193]], label_dx: 36 },
+          { id: 'retriever_graph', source: 'retriever', target: 'graph_store', source_port: 'right', target_port: 'left', flow: 'read', label: 'relationships', route_points: [[720, 583], [720, 348]], label_dx: 46 },
+          { id: 'retriever_llm', source: 'retriever', target: 'llm', source_port: 'right', target_port: 'left', flow: 'control', label: 'personalized context' }
+        ],
+        legend: [
+          { flow: 'control', label: 'Control / orchestration' },
+          { flow: 'write', label: 'Memory write path' },
+          { flow: 'read', label: 'Memory read path' },
+          { flow: 'data', label: 'Structured facts' }
+        ],
+        legend_position: 'bottom-left'
+      }
+    })
+    assert.equal(fireworksDiagram.structuredContent.kind, 'fireworks')
+    assert.equal(fireworksDiagram.structuredContent.sourceFormat, 'ir')
+    assert.equal(fireworksDiagram.structuredContent.diagramLayout.engine, 'fireworks-style')
+    assert.equal(fireworksDiagram.structuredContent.diagramLayout.nodeCount, 7)
+    assert.equal(fireworksDiagram.structuredContent.diagramLayout.arrowCount, 8)
+    assert.equal(fireworksDiagram.structuredContent.diagramLayout.containerCount, 4)
+    scene = await readScene(projectDir)
+    assert.ok(findBySemantic(scene, 'fireworks_node_manager'))
+    assert.ok(findBySemantic(scene, 'fireworks_container_storage_layer'))
+    assert.ok(findBySemantic(scene, 'fireworks_arrow_client_manager'))
+    assert.ok(findBySemantic(scene, 'fireworks_legend_1_label'))
+    assert.equal(findBySemantic(scene, 'fireworks_background', 'fireworks_mem0_case')?.locked, false)
+    assertTextStartsInsideNode(scene, 'fireworks_node_manager', 'fireworks_node_manager_label')
+    assertTextStartsInsideNode(scene, 'fireworks_node_retriever', 'fireworks_node_retriever_label')
+
+    const fireworksRepairCase = {
+      title: 'Fireworks Repair Case',
+      style: 7,
+      width: 620,
+      height: 360,
+      layout: { x: 980, y: 2280 },
+      containers: [
+        { id: 'runtime_zone', label: 'Runtime Zone', x: 40, y: 120, width: 330, height: 126 }
+      ],
+      nodes: [
+        { id: 'local_canvas', kind: 'rect', label: 'Local Canvas Runtime', type_label: 'UI', sublabel: 'selection + actions', x: 72, y: 150, width: 150, height: 76 },
+        { id: 'native_renderer', kind: 'rect', label: 'Native Excalidraw Renderer', type_label: 'Renderer', sublabel: 'convert + updateScene', x: 210, y: 150, width: 150, height: 76 }
+      ],
+      arrows: [
+        { id: 'canvas_renderer', source: 'local_canvas', target: 'native_renderer', source_port: 'right', target_port: 'left', flow: 'control', label: 'render' }
+      ],
+      legend: [
+        { flow: 'control', label: 'Control route' },
+        { flow: 'feedback', label: 'Validation feedback' }
+      ],
+      legend_position: 'bottom-right'
+    }
+    const fireworksRepairDiagram = await client.callTool('insert_excalidraw_diagram', {
+      ...baseArgs,
+      batchId: 'fireworks_overlap_repair_case',
+      sourceFormat: 'ir',
+      kind: 'fireworks',
+      diagram: fireworksRepairCase
+    })
+    assert.equal(fireworksRepairDiagram.structuredContent.diagramLayout.autoRepaired, true)
+    scene = await readScene(projectDir)
+    const localCanvas = findBySemantic(scene, 'fireworks_node_local_canvas', 'fireworks_overlap_repair_case')
+    const nativeRenderer = findBySemantic(scene, 'fireworks_node_native_renderer', 'fireworks_overlap_repair_case')
+    const runtimeZone = findBySemantic(scene, 'fireworks_container_runtime_zone', 'fireworks_overlap_repair_case')
+    const repairLegend = findBySemantic(scene, 'fireworks_legend_1_label', 'fireworks_overlap_repair_case')
+    assert.ok(nativeRenderer.x >= localCanvas.x + localCanvas.width + 28)
+    assert.ok(runtimeZone.x + runtimeZone.width >= nativeRenderer.x + nativeRenderer.width + 32)
+    assert.ok(repairLegend.y > runtimeZone.y + runtimeZone.height)
+
+    const fireworksRepairRepeat = await client.callTool('insert_excalidraw_diagram', {
+      ...baseArgs,
+      batchId: 'fireworks_overlap_repair_case_repeat',
+      sourceFormat: 'ir',
+      kind: 'fireworks',
+      diagram: fireworksRepairCase
+    })
+    assert.equal(fireworksRepairRepeat.structuredContent.diagramLayout.autoRepaired, true)
+    scene = await readScene(projectDir)
+    assertBatchesDoNotShareElementIds(scene, 'fireworks_overlap_repair_case', 'fireworks_overlap_repair_case_repeat')
+    assert.ok(findBySemantic(scene, 'fireworks_arrow_canvas_renderer', 'fireworks_overlap_repair_case'))
+    assert.ok(findBySemantic(scene, 'fireworks_arrow_canvas_renderer', 'fireworks_overlap_repair_case_repeat'))
+    assert.ok(findBySemantic(scene, 'fireworks_legend_1_label', 'fireworks_overlap_repair_case'))
+    assert.ok(findBySemantic(scene, 'fireworks_legend_1_label', 'fireworks_overlap_repair_case_repeat'))
 
     const classDiagram = await client.callTool('insert_excalidraw_diagram', {
       ...baseArgs,

@@ -40,22 +40,24 @@ runtime.
 - Do not rely on fuzzy text matching to decide which elements to edit.
 - If the target is unclear, ask the user to select the relevant elements before applying destructive changes.
 - Generated diagrams should be editable Excalidraw elements, not a flattened bitmap.
+- Treat diagram route names as internal implementation details. Users should
+  describe their audience, subject, and desired outcome; do not ask them to
+  choose route names such as flowchart, fireworks, or sequence.
 - For `arrow` and `line` specs, `points` are local to `x/y`. Use
   `x=100, y=200, points=[[0,0],[300,0]]`, not absolute canvas points such as
   `[[100,200],[400,200]]`.
-- For sequence diagrams, lane-based handoff timelines, or cross-system message
-  flows, prefer `insert_excalidraw_diagram` with `kind: "sequence"` and
-  structured `participants`, `messages`, `notes`, and `gates`. Do not hand-place
-  every lifeline, arrow, and annotation unless the diagram shape is unsupported.
-- For standard node-edge diagrams, prefer `insert_excalidraw_diagram` with
-  `sourceFormat: "ir"` and `kind: "flowchart"`, `"class"`, `"er"`, `"state"`,
-  `"mindmap"`, or `"graph"`. Provide structured `nodes` and `edges`; do not
-  provide canvas coordinates unless the user explicitly requests a manual
-  free-form composition.
+- Choose the structured route internally from the communication goal:
+  lane-based handoff timelines and cross-system message flows use structured
+  participants/messages/notes/gates; presentation-grade system architecture or
+  README/slide-friendly visuals use containers, short labels, sublabels, routed
+  connectors, and legends; formal data/code/state/mind-map views use structured
+  nodes and edges. Use free-form elements when the diagram shape is unsupported
+  or the user is asking for a visual composition rather than a structured
+  diagram.
 - Mermaid text is not the primary drawing path yet. If a user provides Mermaid,
-  preserve the declared diagram type as structured `kind` and convert the
-  semantics into diagram IR before drawing. Do not route by matching Mermaid
-  keywords or natural-language text.
+  preserve the declared diagram semantics and convert them into diagram IR
+  before drawing. Do not route by matching Mermaid keywords or natural-language
+  text.
 - If the user explicitly asks to insert a generated bitmap/image/photo, use the `excalidraw-image` skill and `insert_excalidraw_image`.
 - Use `cameraUpdate` pseudo elements or `focus_excalidraw_viewport` to guide the
   visible canvas after large drawings.
@@ -102,9 +104,9 @@ For new drawings:
 3. Call `read_excalidraw_drawing_guide` if the current conversation has not
    already loaded it.
 4. Convert the request into structured Excalidraw element specs, or into a
-   structured `insert_excalidraw_diagram` payload for supported sequence and
-   node-edge diagrams. Include `cameraUpdate` when useful for free-form element
-   drawings.
+   structured `insert_excalidraw_diagram` payload using the best internal route
+   for the user's communication goal. Include `cameraUpdate` when useful for
+   free-form element drawings.
 5. Call the drawing tool with progressive rendering for visible diagrams.
 6. Read the tool result and report inserted count, important semantic ids,
    layoutValidation summary, source mode, canvas directory, and local URL when

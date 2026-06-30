@@ -47,7 +47,7 @@ References:
 | User feedback | `excalidrawAPI.scrollToContent`, `setToast` | Focus and notify when Codex updates scene | Implemented |
 | Scene inspection | `getSceneElements`, `getAppState`, `getFiles` | Build current payload for save/export/action queue | Implemented |
 | Programmatic drawing | `convertToExcalidrawElements` from skeletons | MCP submits native element requests to the open canvas; browser runtime converts skeletons, updates scene, and reports inserted ids | Implemented |
-| Structured diagram IR | Project-owned diagram schema plus layout adapters | `insert_excalidraw_diagram` accepts explicit `kind` and structured IR; sequence diagrams use a lane/order layout, and node-edge diagrams use ELK before the shared Excalidraw renderer | Implemented |
+| Structured diagram IR | Project-owned diagram schema plus layout adapters | The agent selects an internal route from the user's communication goal, then calls `insert_excalidraw_diagram` with structured IR; lane flows, curated architecture visuals, and node-edge diagrams share the Excalidraw renderer | Implemented |
 | Viewport guidance | `excalidrawAPI.scrollToContent` | `cameraUpdate` pseudo elements and `focus_excalidraw_viewport` queue project a scene rectangle into the visible canvas | Implemented |
 | Progressive rendering | `excalidrawAPI.updateScene` | Browser runtime reveals generated elements in ordered chunks before the final save, preserving editable Excalidraw elements | Implemented |
 | Layout validation | Pure structured spec validation before conversion | Repairs small shapes, low contrast, likely text overflow, absolute line/arrow points, and overlapping node/text boxes without using label text for intent routing | Implemented |

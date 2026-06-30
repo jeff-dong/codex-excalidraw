@@ -29,6 +29,7 @@ import {
   Settings,
   Sun,
   Moon,
+  Trash2,
   X
 } from 'lucide-react'
 import { normalizeElementSpecsForLayout } from '../lib/excalidraw-layout.mjs'
@@ -139,6 +140,11 @@ const UI_TEXT = {
     resolvingComment: '正在关闭评论...',
     resolvedComment: (id) => `已关闭 ${id}`,
     resolveFailed: '关闭失败',
+    deletingComment: '正在删除评论...',
+    deletedComment: (id) => `已删除评论 ${id}`,
+    deleteComment: '删除',
+    deleteCommentBlocked: '评论正在执行中，先取消或等待完成后再删除',
+    deleteFailed: '删除失败',
     queueingAction: '正在提交给 Codex...',
     actionQueueFailed: '提交失败',
     copiedExistingAction: (id) => `已复制已有 action ${id}`,
@@ -264,6 +270,11 @@ const UI_TEXT = {
     resolvingComment: 'Resolving comment...',
     resolvedComment: (id) => `Resolved ${id}`,
     resolveFailed: 'Resolve failed',
+    deletingComment: 'Deleting comment...',
+    deletedComment: (id) => `Deleted comment ${id}`,
+    deleteComment: 'Delete',
+    deleteCommentBlocked: 'This comment is running. Cancel it or wait until it finishes before deleting.',
+    deleteFailed: 'Delete failed',
     queueingAction: 'Queueing action for Codex...',
     actionQueueFailed: 'Action queue failed',
     copiedExistingAction: (id) => `Copied existing action ${id}`,
@@ -1846,6 +1857,36 @@ export default function App() {
     [comments, t]
   )
 
+  const deleteComment = useCallback(
+    async (commentId) => {
+      const runningAction = actions.find((action) => action.commentId === commentId && action.status === 'running')
+      if (runningAction) {
+        setCommentMessage(t.deleteCommentBlocked)
+        return
+      }
+
+      const nextComments = comments.filter((comment) => comment.id !== commentId)
+      const nextActions = actions.filter((action) => action.commentId !== commentId)
+      setComments(nextComments)
+      setActions(nextActions)
+      setCommentMessage(t.deletingComment)
+      try {
+        const writes = [postJson(COMMENTS_ENDPOINT, { version: 1, comments: nextComments })]
+        if (nextActions.length !== actions.length) {
+          writes.push(postJson(ACTIONS_ENDPOINT, { version: 1, actions: nextActions }))
+        }
+        await Promise.all(writes)
+        setCommentMessage(t.deletedComment(commentId))
+      } catch (error) {
+        console.error(error)
+        setComments(comments)
+        setActions(actions)
+        setCommentMessage(`${t.deleteFailed}: ${error.message}`)
+      }
+    },
+    [actions, comments, t]
+  )
+
   const runCommentWithCodex = useCallback(
     async (comment) => {
       const existingAction = actions.find(
@@ -2383,25 +2424,38 @@ export default function App() {
                                 ) : null}
                               </div>
                             ) : null}
-                            {comment.status === 'open' ? (
-                              <div className="comment-actions">
-                                <button
-                                  className="text-button text-button--primary"
-                                  data-testid="run-comment-button"
-                                  onClick={() => runCommentWithCodex(comment)}
-                                  type="button"
-                                >
-                                  <PlayCircle aria-hidden="true" size={13} />
-                                  <span>{actionIsPending ? t.copyAction : t.runWithCodex}</span>
-                                </button>
-                                <button className="text-button" data-testid="copy-comment-command-button" onClick={() => copyCommentCommand(comment)} type="button">
-                                  {t.copyCommand}
-                                </button>
-                                <button className="text-button" data-testid="resolve-comment-button" onClick={() => resolveComment(comment.id)} type="button">
-                                  {t.resolve}
-                                </button>
-                              </div>
-                            ) : null}
+                            <div className="comment-actions">
+                              {comment.status === 'open' ? (
+                                <>
+                                  <button
+                                    className="text-button text-button--primary"
+                                    data-testid="run-comment-button"
+                                    onClick={() => runCommentWithCodex(comment)}
+                                    type="button"
+                                  >
+                                    <PlayCircle aria-hidden="true" size={13} />
+                                    <span>{actionIsPending ? t.copyAction : t.runWithCodex}</span>
+                                  </button>
+                                  <button className="text-button" data-testid="copy-comment-command-button" onClick={() => copyCommentCommand(comment)} type="button">
+                                    {t.copyCommand}
+                                  </button>
+                                  <button className="text-button" data-testid="resolve-comment-button" onClick={() => resolveComment(comment.id)} type="button">
+                                    {t.resolve}
+                                  </button>
+                                </>
+                              ) : null}
+                              <button
+                                className="text-button text-button--danger"
+                                data-testid="delete-comment-button"
+                                disabled={action?.status === 'running'}
+                                onClick={() => deleteComment(comment.id)}
+                                title={action?.status === 'running' ? t.deleteCommentBlocked : t.deleteComment}
+                                type="button"
+                              >
+                                <Trash2 aria-hidden="true" size={13} />
+                                <span>{t.deleteComment}</span>
+                              </button>
+                            </div>
                           </article>
                         )
                       })}

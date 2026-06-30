@@ -1032,6 +1032,15 @@ async function main() {
       const scene = await readScene(projectA)
       return comments.comments?.some((comment) => comment.id === commentId) && visibleElements(scene).some((element) => element.type === 'image')
     }, 'project A persisted through browser reload')
+    await clickTestId(page, 'delete-comment-button')
+    await waitFor(async () => {
+      const comments = await readComments(projectA)
+      const actions = await readActions(projectA)
+      const commentDeleted = !comments.comments?.some((comment) => comment.id === commentId)
+      const actionDeleted = !actions.actions?.some((action) => action.commentId === commentId)
+      return commentDeleted && actionDeleted ? { comments, actions } : null
+    }, 'comment deletion persisted and removed linked action')
+    assert.equal(await page.getByTestId('comment-item').count(), 0)
 
     const mobilePage = await context.newPage()
     await mobilePage.setViewportSize({ width: 390, height: 844 })
