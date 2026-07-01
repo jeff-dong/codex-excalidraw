@@ -13,7 +13,8 @@
     "test:mcp": "node scripts/test-mcp-flow.mjs",
     "test:source": "node scripts/test-source-constraints.mjs",
     "test:layout": "node scripts/test-layout-quality.mjs",
-    "test": "npm run test:source && npm run test:layout && npm run test:mcp"
+    "test:animated-export": "node scripts/test-animated-export.mjs",
+    "test": "npm run test:source && npm run test:layout && npm run test:animated-export && npm run test:mcp"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.0",

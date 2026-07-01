@@ -32,6 +32,7 @@ import {
   Trash2,
   X
 } from 'lucide-react'
+import { buildAnimatedExportHtml } from './animated-export.js'
 import { normalizeElementSpecsForLayout } from '../lib/excalidraw-layout.mjs'
 import { qualityReportForElements } from '../lib/excalidraw-quality.mjs'
 
@@ -89,6 +90,8 @@ const UI_TEXT = {
     exportPngDesc: '位图，分享预览',
     exportSvg: 'SVG',
     exportSvgDesc: '矢量图，可缩放',
+    exportAnimatedHtml: '动图 HTML',
+    exportAnimatedHtmlDesc: '可预览的流动动画',
     exportJson: 'JSON',
     exportJsonDesc: 'scene 数据',
     exportExcalidraw: '.excalidraw',
@@ -219,6 +222,8 @@ const UI_TEXT = {
     exportPngDesc: 'Bitmap image',
     exportSvg: 'SVG',
     exportSvgDesc: 'Vector image',
+    exportAnimatedHtml: 'Animated HTML',
+    exportAnimatedHtmlDesc: 'Flowing motion preview',
     exportJson: 'JSON',
     exportJsonDesc: 'scene data',
     exportExcalidraw: '.excalidraw',
@@ -1806,6 +1811,43 @@ export default function App() {
     setExportMessage(t.exportedPath(result.relativePath))
   }, [t])
 
+  const exportAnimatedHtml = useCallback(async () => {
+    if (!apiRef.current) return
+    const previewWindow = window.open('', '_blank')
+    if (previewWindow) {
+      previewWindow.document.write('<!doctype html><title>Preparing animated export...</title><body style="font:14px system-ui;padding:24px">Preparing animated export...</body>')
+      previewWindow.document.close()
+    }
+    const elements = apiRef.current.getSceneElements()
+    const appState = apiRef.current.getAppState()
+    const files = apiRef.current.getFiles()
+    const svg = await exportToSvg({
+      elements,
+      appState: {
+        ...appState,
+        exportBackground: true,
+        viewBackgroundColor: appState.viewBackgroundColor ?? '#fbfbfa'
+      },
+      files,
+      exportPadding: 24
+    })
+    const fileName = `codex-excalidraw-animated-${nowStamp()}.html`
+    const text = buildAnimatedExportHtml({
+      svgText: svg.outerHTML,
+      elements,
+      appState
+    })
+    const result = await saveExport(fileName, text)
+    downloadBlob(new Blob([text], { type: 'text/html' }), fileName)
+    const exportUrl = `/exports/${encodeURIComponent(result.fileName)}`
+    if (previewWindow) {
+      previewWindow.location.href = exportUrl
+    } else {
+      window.open(exportUrl, '_blank')
+    }
+    setExportMessage(t.exportedPath(result.relativePath))
+  }, [t])
+
   const createDraftComment = useCallback(async () => {
     const body = commentDraft.trim()
     if (!body || selection.length === 0) return null
@@ -2041,10 +2083,11 @@ export default function App() {
     () => [
       { id: 'png', tag: t.exportPng, description: t.exportPngDesc, action: exportPng },
       { id: 'svg', tag: t.exportSvg, description: t.exportSvgDesc, action: exportSvg },
+      { id: 'animated-html', tag: t.exportAnimatedHtml, description: t.exportAnimatedHtmlDesc, action: exportAnimatedHtml },
       { id: 'json', tag: t.exportJson, description: t.exportJsonDesc, action: exportJson },
       { id: 'excalidraw', tag: '.exc', description: t.exportExcalidrawDesc, action: saveExcalidrawFile }
     ],
-    [exportJson, exportPng, exportSvg, saveExcalidrawFile, t]
+    [exportAnimatedHtml, exportJson, exportPng, exportSvg, saveExcalidrawFile, t]
   )
   const openCommentsCount = comments.filter((comment) => comment.status === 'open').length
   const hasCollapsedComments = comments.length > COMMENT_COLLAPSE_LIMIT

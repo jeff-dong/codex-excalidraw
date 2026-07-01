@@ -1567,8 +1567,8 @@ textarea {
 
 .export-dropdown {
   top: calc(100% + 6px);
-  width: 228px;
-  min-width: 228px;
+  width: 258px;
+  min-width: 258px;
   padding: 6px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1601,7 +1601,8 @@ textarea {
 }
 
 .export-dropdown__tag {
-  width: 34px;
+  width: 72px;
+  flex: 0 0 72px;
   color: var(--accent);
   font-family: "SFMono-Regular", "JetBrains Mono", Consolas, monospace;
   font-size: 11px;

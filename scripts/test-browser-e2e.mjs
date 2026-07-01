@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { createInterface } from 'node:readline'
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import { mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
 import { isAbsolute, join, relative, resolve, sep } from 'node:path'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { deflateSync } from 'node:zlib'
 import { chromium } from 'playwright-core'
 
@@ -99,9 +99,29 @@ async function listRelativeFiles(rootDir) {
   return files.sort()
 }
 
+function cachedPlaywrightChromiumCandidates() {
+  const root = join(homedir(), 'Library', 'Caches', 'ms-playwright')
+  if (!existsSync(root)) return []
+  const cacheDirs = (prefix) => readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && entry.name.startsWith(`${prefix}-`))
+    .map((entry) => entry.name)
+    .sort((left, right) => right.localeCompare(left, undefined, { numeric: true }))
+
+  const headlessShells = cacheDirs('chromium_headless_shell').flatMap((entry) => [
+    join(root, entry, 'chrome-headless-shell-mac-arm64', 'chrome-headless-shell'),
+    join(root, entry, 'chrome-headless-shell-mac', 'chrome-headless-shell')
+  ])
+  const fullChromiums = cacheDirs('chromium').flatMap((entry) => [
+    join(root, entry, 'chrome-mac-arm64', 'Google Chrome for Testing.app', 'Contents', 'MacOS', 'Google Chrome for Testing'),
+    join(root, entry, 'chrome-mac', 'Google Chrome for Testing.app', 'Contents', 'MacOS', 'Google Chrome for Testing')
+  ])
+  return [...headlessShells, ...fullChromiums]
+}
+
 function chromeExecutablePath() {
   const candidates = [
     process.env.PLAYWRIGHT_CHROME_EXECUTABLE,
+    ...cachedPlaywrightChromiumCandidates(),
     '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
     '/Applications/Chromium.app/Contents/MacOS/Chromium'
@@ -503,6 +523,7 @@ async function main() {
       acceptDownloads: true,
       viewport: { width: 1366, height: 900 }
     })
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: url })
     const page = await context.newPage()
     const consoleErrors = []
     page.on('console', (message) => {
@@ -968,10 +989,14 @@ async function main() {
     await exportFromMenu(page, 'export-option-json')
     await exportFromMenu(page, 'export-option-svg')
     await exportFromMenu(page, 'export-option-png')
+    await exportFromMenu(page, 'export-option-animated-html')
     const exportsDirA = join(projectA, 'canvas', 'excalidraw', 'exports')
     await waitFor(async () => {
       const files = await listRelativeFiles(exportsDirA)
-      return files.some((file) => file.endsWith('.json')) && files.some((file) => file.endsWith('.svg')) && files.some((file) => file.endsWith('.png'))
+      return files.some((file) => file.endsWith('.json')) &&
+        files.some((file) => file.endsWith('.svg')) &&
+        files.some((file) => file.endsWith('.png')) &&
+        files.some((file) => file.endsWith('.html'))
     }, 'browser exports written in project A')
 
     await clickTestId(page, 'project-menu-trigger')
@@ -1081,7 +1106,7 @@ async function main() {
         'mcp-image-select-drag-runtime',
         'settings-language-theme',
         'panel-collapse-resize',
-        'browser-export-json-svg-png',
+        'browser-export-json-svg-png-animated-html',
         'multi-project-switch-restore',
         'reload-persistence',
         'mobile-load',

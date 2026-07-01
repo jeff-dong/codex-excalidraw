@@ -31,6 +31,7 @@ const mimeTypes = new Map([
   ['.apng', 'image/apng'],
   ['.avif', 'image/avif'],
   ['.gif', 'image/gif'],
+  ['.html', 'text/html; charset=utf-8'],
   ['.jpg', 'image/jpeg'],
   ['.jpeg', 'image/jpeg'],
   ['.json', 'application/json'],
