@@ -215,6 +215,9 @@ includesAll(
     'layoutFireworksDiagram',
     'GRAPH_DIAGRAM_KINDS',
     'FIREWORKS_STYLE_PROFILES',
+    'DEFAULT_VISUAL_LANGUAGE',
+    'UNIFIED_DIAGRAM_STYLE',
+    'visualLanguage',
     'GRAPH_LAYOUT_DEFAULTS',
     'fireworks-style',
     'participants',
@@ -287,6 +290,9 @@ includesAll(
     'cameraUpdate',
     'layoutValidation',
     'qualityReport',
+    'routeRecommendation',
+    'large-freeform-diagram-batch',
+    'freeformDiagramRouteRecommendation',
     'qualityReportForElements',
     'rendering',
     '/api/native-elements',
@@ -419,7 +425,10 @@ includesAll(
     'participants',
     'messages',
     'notes',
-    'gates'
+    'gates',
+    'routeRecommendation',
+    'visual_validate_excalidraw',
+    'qualityReport'
   ],
   'Draw visible workflow boundary'
 )

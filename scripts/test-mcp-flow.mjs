@@ -353,6 +353,35 @@ async function runFileBackedScenario(projectDir) {
     const planner = findBySemantic(scene, 'planner')
     assert.ok(planner, 'planner element should be inserted')
 
+    const freeformRouteWarning = await client.callTool('insert_excalidraw_elements', {
+      ...baseArgs,
+      batchId: 'large_freeform_route_warning',
+      elements: [
+        { type: 'text', semanticId: 'route_warning_title', x: 0, y: 170, text: 'Large free-form batch', fontSize: 28 },
+        { type: 'rectangle', semanticId: 'route_warning_node_1', x: 0, y: 230, width: 180, height: 80, label: 'Input', style: { backgroundColor: '#dbeafe' } },
+        { type: 'rectangle', semanticId: 'route_warning_node_2', x: 240, y: 230, width: 180, height: 80, label: 'Plan', style: { backgroundColor: '#dcfce7' } },
+        { type: 'rectangle', semanticId: 'route_warning_node_3', x: 480, y: 230, width: 180, height: 80, label: 'Render', style: { backgroundColor: '#fef3c7' } },
+        { type: 'rectangle', semanticId: 'route_warning_node_4', x: 720, y: 230, width: 180, height: 80, label: 'Validate', style: { backgroundColor: '#ede9fe' } },
+        { type: 'rectangle', semanticId: 'route_warning_node_5', x: 0, y: 380, width: 180, height: 80, label: 'Context', style: { backgroundColor: '#e0f2fe' } },
+        { type: 'rectangle', semanticId: 'route_warning_node_6', x: 240, y: 380, width: 180, height: 80, label: 'Layout', style: { backgroundColor: '#ccfbf1' } },
+        { type: 'rectangle', semanticId: 'route_warning_node_7', x: 480, y: 380, width: 180, height: 80, label: 'Canvas', style: { backgroundColor: '#fee2e2' } },
+        { type: 'rectangle', semanticId: 'route_warning_node_8', x: 720, y: 380, width: 180, height: 80, label: 'Export', style: { backgroundColor: '#f5f5f4' } },
+        { type: 'arrow', semanticId: 'route_warning_edge_1', x: 190, y: 270, width: 40, height: 0, label: 'next' },
+        { type: 'arrow', semanticId: 'route_warning_edge_2', x: 430, y: 270, width: 40, height: 0, label: 'next' },
+        { type: 'arrow', semanticId: 'route_warning_edge_3', x: 670, y: 270, width: 40, height: 0, label: 'next' },
+        { type: 'arrow', semanticId: 'route_warning_edge_4', x: 90, y: 320, width: 0, height: 50, label: 'support' },
+        { type: 'arrow', semanticId: 'route_warning_edge_5', x: 330, y: 320, width: 0, height: 50, label: 'support' },
+        { type: 'text', semanticId: 'route_warning_note_1', x: 0, y: 500, text: 'Structured route should own full diagram layout.', fontSize: 18 },
+        { type: 'text', semanticId: 'route_warning_note_2', x: 360, y: 500, text: 'Free-form elements remain useful for local edits.', fontSize: 18 },
+        { type: 'text', semanticId: 'route_warning_note_3', x: 720, y: 500, text: 'The MCP result should warn without blocking.', fontSize: 18 },
+        { type: 'text', semanticId: 'route_warning_note_4', x: 0, y: 540, text: 'Complete diagrams should use the structured diagram API.', fontSize: 18 },
+        { type: 'cameraUpdate', x: -40, y: 140, width: 1020, height: 460 }
+      ]
+    })
+    assert.equal(freeformRouteWarning.structuredContent.routeRecommendation.reason, 'large-freeform-diagram-batch')
+    assert.equal(freeformRouteWarning.structuredContent.routeRecommendation.structuralSignals.connectorCount, 5)
+    assert.equal(freeformRouteWarning.structuredContent.routeRecommendation.structuralSignals.durableShapeCount, 8)
+
     const layoutRepaired = await client.callTool('insert_excalidraw_elements', {
       ...baseArgs,
       batchId: 'layout_repair_file_backed',
@@ -471,6 +500,7 @@ async function runFileBackedScenario(projectDir) {
     assert.equal(sequenceDiagram.structuredContent.diagramLayout.messageCount, 4)
     assert.equal(sequenceDiagram.structuredContent.diagramLayout.noteCount, 1)
     assert.equal(sequenceDiagram.structuredContent.diagramLayout.gateCount, 1)
+    assert.equal(sequenceDiagram.structuredContent.diagramLayout.visualLanguage, 'fireworks-style')
     scene = await readScene(projectDir)
     assert.ok(findBySemantic(scene, 'seq_participant_user'))
     assert.ok(findBySemantic(scene, 'seq_participant_agent'))
@@ -512,6 +542,7 @@ async function runFileBackedScenario(projectDir) {
     assert.equal(flowchartDiagram.structuredContent.diagramLayout.algorithm, 'layered')
     assert.equal(flowchartDiagram.structuredContent.diagramLayout.nodeCount, 5)
     assert.equal(flowchartDiagram.structuredContent.diagramLayout.edgeCount, 4)
+    assert.equal(flowchartDiagram.structuredContent.diagramLayout.visualLanguage, 'fireworks-style')
     scene = await readScene(projectDir)
     assert.ok(findBySemantic(scene, 'flowchart_node_intent'))
     assert.ok(findBySemantic(scene, 'flowchart_node_renderer'))
@@ -566,6 +597,7 @@ async function runFileBackedScenario(projectDir) {
     assert.equal(fireworksDiagram.structuredContent.kind, 'fireworks')
     assert.equal(fireworksDiagram.structuredContent.sourceFormat, 'ir')
     assert.equal(fireworksDiagram.structuredContent.diagramLayout.engine, 'fireworks-style')
+    assert.equal(fireworksDiagram.structuredContent.diagramLayout.visualLanguage, 'fireworks-style')
     assert.equal(fireworksDiagram.structuredContent.diagramLayout.nodeCount, 7)
     assert.equal(fireworksDiagram.structuredContent.diagramLayout.arrowCount, 8)
     assert.equal(fireworksDiagram.structuredContent.diagramLayout.containerCount, 4)

@@ -26,8 +26,12 @@ must be a visible canvas session:
    the URL prominently if the browser tool is unavailable.
 4. Call `read_excalidraw_drawing_guide` once for substantial diagram creation
    or when the current conversation has not already loaded the drawing guide.
-5. Only then call `insert_excalidraw_elements`, or `insert_excalidraw_diagram`
-   when the request is a supported structured diagram.
+5. Only then choose the drawing path. For any complete architecture, system,
+   process, workflow, data/code structure, or README/slide-friendly diagram,
+   call `insert_excalidraw_diagram` and let the diagram engine compute layout,
+   connectors, containers, labels, legend, and viewport. Use
+   `insert_excalidraw_elements` only for partial edits, annotations, small
+   visual compositions, or unsupported shapes.
 
 Do not call drawing tools with `preferApi: false` for normal user requests. That
 flag is an internal test/headless escape hatch and bypasses the visible canvas
@@ -43,6 +47,11 @@ runtime.
 - Treat diagram route names as internal implementation details. Users should
   describe their audience, subject, and desired outcome; do not ask them to
   choose route names such as flowchart, fireworks, or sequence.
+- Use one unified presentation visual language for complete diagrams:
+  fireworks-style spacing, short labels, semantic arrow colors, readable
+  containers, legend discipline, and post-render validation. Keep specialized
+  layout engines internal when the structure requires lanes, UML/ER/state
+  semantics, mind maps, or dense node-edge layout.
 - For `arrow` and `line` specs, `points` are local to `x/y`. Use
   `x=100, y=200, points=[[0,0],[300,0]]`, not absolute canvas points such as
   `[[100,200],[400,200]]`.
@@ -53,7 +62,11 @@ runtime.
   connectors, and legends; formal data/code/state/mind-map views use structured
   nodes and edges. Use free-form elements when the diagram shape is unsupported
   or the user is asking for a visual composition rather than a structured
-  diagram.
+  diagram. All structured routes should preserve the unified fireworks-style
+  visual language unless the user explicitly requests a different look.
+- Do not hand-place a full diagram as a large batch of rectangles, text, lines,
+  and arrows. That bypasses the layout engine and usually causes overlap,
+  uneven spacing, weak hierarchy, and unreadable labels.
 - Mermaid text is not the primary drawing path yet. If a user provides Mermaid,
   preserve the declared diagram semantics and convert them into diagram IR
   before drawing. Do not route by matching Mermaid keywords or natural-language
@@ -63,9 +76,16 @@ runtime.
   visible canvas after large drawings.
 - For substantial user-visible creation, pass `rendering: { "mode": "progressive" }`
   unless the user explicitly asks for an immediate update.
+- For substantial user-visible diagrams, call `visual_validate_excalidraw` after
+  insertion. Treat a failed or high-risk `qualityReport` as unfinished work:
+  simplify, redraw with the structured route, or split the diagram before
+  delivery.
 - Read `layoutValidation` from the insert result. If it reports many repairs,
   simplify the next drawing pass into fewer larger elements or split the diagram
   into sections with `cameraUpdate`.
+- Read `routeRecommendation` from `insert_excalidraw_elements`. If it warns
+  that a free-form batch structurally looks like a full diagram, stop adding
+  primitive elements and redraw with `insert_excalidraw_diagram`.
 - Use `save_excalidraw_checkpoint` before risky multi-step edits, and
   `restore_excalidraw_checkpoint` when the user asks to return to a prior state.
 - For pseudo-element deletion, use structured `elementIds`; do not pass
@@ -103,12 +123,15 @@ For new drawings:
    user explicitly requested a headless file artifact.
 3. Call `read_excalidraw_drawing_guide` if the current conversation has not
    already loaded it.
-4. Convert the request into structured Excalidraw element specs, or into a
-   structured `insert_excalidraw_diagram` payload using the best internal route
-   for the user's communication goal. Include `cameraUpdate` when useful for
-   free-form element drawings.
+4. Convert complete diagrams into a structured `insert_excalidraw_diagram`
+   payload using the best internal route for the user's communication goal.
+   Convert to direct Excalidraw element specs only for local edits, small
+   annotations, or unsupported visual compositions. Include `cameraUpdate` when
+   useful for free-form element drawings.
 5. Call the drawing tool with progressive rendering for visible diagrams.
-6. Read the tool result and report inserted count, important semantic ids,
+6. For substantial diagrams, call `visual_validate_excalidraw` against the new
+   batch or scene and review its `qualityReport`.
+7. Read the tool result and report inserted count, important semantic ids,
    layoutValidation summary, source mode, canvas directory, and local URL when
    available.
 

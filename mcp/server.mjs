@@ -101,10 +101,12 @@ Call this once before substantial diagram creation. Then choose the drawing path
 - Use rendering: { "mode": "progressive" } for user-visible creation when the drawing should appear step by step.
 - Targets must stay structural: selected ids, explicit elementIds, comment targets, action targets, or semanticIds.
 - For production-like or user-facing diagrams, call visual_validate_excalidraw after insertion to get a local rendered preview and qualityReport.
+- Do not hand-place a complete architecture, system, process, or README/slide-friendly diagram as a large insert_excalidraw_elements batch. Use insert_excalidraw_diagram so layout, connectors, containers, labels, legend, and viewport are computed together.
+- Complete diagrams should share a unified fireworks-style visual language: generous spacing, short labels, semantic arrow colors, readable containers, disciplined legends, and post-render validation. Specialized engines remain internal for lanes, formal structure diagrams, state/data models, mind maps, and dense node-edge layout.
 
 ## Diagram Routing
 
-Choose a structured route from the user's intent and drawing best practices. Do not ask the user to choose internal kinds, and do not require the user's prompt to mention implementation labels.
+Choose a structured route from the user's intent and drawing best practices. Do not ask the user to choose internal kinds, and do not require the user's prompt to mention implementation labels. Preserve the unified fireworks-style visual language across structured routes unless the user explicitly asks for another visual treatment.
 
 - Lane-based interactions, handoff timelines, and cross-system message flows: call insert_excalidraw_diagram with the internal sequence route and provide participants, messages, notes, and gates.
 - Presentation-grade architecture, system maps, product diagrams, and README/slide-friendly visuals: call insert_excalidraw_diagram with the internal curated architecture route. Use containers, stable node ids, node type labels, short labels, sublabels, routed connectors, and a legend.
@@ -170,6 +172,7 @@ The live canvas validates and repairs common layout problems before inserting el
 
 Read the layoutValidation field returned by insert_excalidraw_elements. If issueCount is high, simplify the diagram or redraw it in sections instead of adding more small elements.
 If layoutValidation.needsRedraw is true, do not keep patching the broken batch. Split the drawing into smaller sections or choose the appropriate structured diagram route before inserting again.
+If insert_excalidraw_elements returns routeRecommendation, treat the batch as a structural route warning and redraw with insert_excalidraw_diagram when creating a full diagram.
 Read qualityReport for readability, density, and overlap risk. A fail status means the scene should be fixed before user delivery.
 
 ## Boundaries
@@ -195,6 +198,62 @@ function textResult(text, structuredContent = {}) {
   return {
     content: [{ type: 'text', text }],
     structuredContent
+  }
+}
+
+function labelTextFromSpec(spec) {
+  if (typeof spec?.label === 'string') return nonEmptyString(spec.label)
+  if (spec?.label && typeof spec.label === 'object') return nonEmptyString(spec.label.text)
+  return null
+}
+
+function freeformDiagramRouteRecommendation(elementSpecs) {
+  const specs = Array.isArray(elementSpecs) ? elementSpecs : []
+  const connectorTypes = new Set(['arrow', 'line'])
+  const durableShapeTypes = new Set(['rectangle', 'ellipse', 'diamond'])
+  let connectorCount = 0
+  let durableShapeCount = 0
+  let labeledShapeCount = 0
+  let standaloneTextCount = 0
+
+  for (const spec of specs) {
+    const type = typeof spec?.type === 'string' ? spec.type : ''
+    if (connectorTypes.has(type)) {
+      connectorCount += 1
+      continue
+    }
+    if (durableShapeTypes.has(type)) {
+      durableShapeCount += 1
+      if (labelTextFromSpec(spec)) labeledShapeCount += 1
+      continue
+    }
+    if (type === 'text') {
+      standaloneTextCount += 1
+    }
+  }
+
+  const structuralSignals = {
+    drawableCount: specs.length,
+    connectorCount,
+    durableShapeCount,
+    labeledConceptCount: labeledShapeCount + standaloneTextCount,
+    labeledShapeCount,
+    standaloneTextCount
+  }
+
+  const looksLikeFullDiagram =
+    structuralSignals.drawableCount >= 18 &&
+    connectorCount >= 4 &&
+    durableShapeCount >= 5 &&
+    structuralSignals.labeledConceptCount >= 6
+
+  if (!looksLikeFullDiagram) return null
+
+  return {
+    severity: 'warn',
+    reason: 'large-freeform-diagram-batch',
+    recommendation: 'This free-form element batch structurally looks like a complete diagram. Use insert_excalidraw_diagram for full architecture, workflow, system, or README/slide-friendly diagrams so layout, containers, routed connectors, labels, legend, validation, and viewport are computed together.',
+    structuralSignals
   }
 }
 
@@ -786,7 +845,7 @@ function toolDefinitions() {
     {
       name: Tools.INSERT_DIAGRAM,
       title: 'Insert Excalidraw Diagram',
-      description: 'Insert a supported structured diagram through a layout engine and shared Excalidraw renderer. Choose the internal kind from the user goal and drawing best practices: lane interactions, curated architecture visuals, formal structure diagrams, or node-edge relationships. Do not ask the user to choose internal kind names, and do not hand-place every node or arrow when a structured route fits.',
+      description: 'Insert a supported structured diagram through a layout engine and shared Excalidraw renderer. Choose the internal kind from the user goal and drawing best practices while preserving the unified fireworks-style visual language: lane interactions, curated architecture visuals, formal structure diagrams, or node-edge relationships. Do not ask the user to choose internal kind names, and do not hand-place every node or arrow when a structured route fits.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -1798,6 +1857,7 @@ async function handleToolCall(id, params) {
     const hasSceneDirectives = Boolean(directives.checkpointId) || directives.deleteIds.length > 0
     const insertArgs = { ...args, elements: elementSpecs }
     const requiresVisibleRuntime = shouldRequireVisibleCanvasRuntime(args, elementSpecs, directives)
+    const routeRecommendation = freeformDiagramRouteRecommendation(elementSpecs)
 
     if (directives.checkpointId) {
       const checkpointTarget = await readCheckpoint(canvasDir, directives.checkpointId)
@@ -1817,6 +1877,7 @@ async function handleToolCall(id, params) {
           insertedElementTypes: nativeResult.insertedElementTypes,
           layoutValidation: nativeResult.layoutValidation,
           qualityReport: nativeResult.qualityReport,
+          routeRecommendation,
           rendering: nativeResult.rendering,
           deletedElementIds: [],
           viewport: directives.viewport,
@@ -1848,6 +1909,7 @@ async function handleToolCall(id, params) {
         deletedElementIds: result.deletedElementIds,
         layoutValidation: result.layoutValidation,
         qualityReport: result.qualityReport,
+        routeRecommendation,
         viewport: result.viewport,
         viewportFocus: viewportResult,
         restoredCheckpointId: directives.checkpointId ?? null,
