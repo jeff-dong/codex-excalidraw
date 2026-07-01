@@ -17,12 +17,14 @@
   <img src="https://img.shields.io/badge/status-local%20MVP-2563eb" alt="Status: local MVP" />
   <img src="https://img.shields.io/badge/Codex-plugin-111827" alt="Codex plugin" />
   <img src="https://img.shields.io/badge/Excalidraw-editable-6965db" alt="Editable Excalidraw" />
+  <img src="https://img.shields.io/badge/export-animated%20HTML-0f766e" alt="Animated HTML export" />
 </p>
 
 Codex Excalidraw adds a live Excalidraw whiteboard to Codex App. It lets Codex
 draw editable architecture diagrams, improve selected canvas content, process
 whiteboard comments, insert generated images into selected regions, and export
-README-ready assets while keeping all canvas state inside the active project.
+README-ready static or animated assets while keeping all canvas state inside
+the active project.
 
 The goal is simple: users describe what they want to explain, not which internal
 diagram renderer to use. Codex chooses the drawing path, applies layout best
@@ -39,7 +41,7 @@ practices, and writes native Excalidraw elements through structured MCP tools.
   task from the canvas.
 - Delete resolved or open comments from the annotation list.
 - Ask Codex to update, delete, recolor, clarify, or optimize selected elements.
-- Export `.excalidraw`, JSON, SVG, and browser-rendered PNG files.
+- Export `.excalidraw`, JSON, SVG, browser-rendered PNG, and animated HTML.
 - Switch between project-local canvas directories without mixing project data.
 
 ## Screenshots
@@ -91,6 +93,11 @@ For diagrams, Codex first reads the drawing guide, then chooses the appropriate
 internal route from the user's communication goal. The user does not need to
 choose between implementation names such as `flowchart` or `fireworks`.
 
+Animated exports reuse the same editable scene. The exporter builds a structured
+motion plan from `customData.codex.motion`, Excalidraw bindings, and element
+geometry, then overlays lightweight SVG motion on top of the static export. It
+does not flatten the source scene or infer intent from visible label text.
+
 ## Diagram Quality
 
 Codex Excalidraw renders diagrams as native Excalidraw elements rather than a
@@ -105,6 +112,8 @@ flat screenshot whenever possible. The current renderer supports:
   overlapping blocks.
 - Structured semantic IDs so later edits can target the right element without
   relying on fuzzy text matching.
+- Structured motion metadata for animated exports: flow arrows move, key nodes
+  pulse, and decorative containers or legends stay still.
 
 Raster images are used only when the user asks for image, photo, screenshot, or
 bitmap output, or when the source artifact is inherently an image.
@@ -205,7 +214,7 @@ Process the pending Excalidraw actions.
 Export the scene:
 
 ```text
-Export the current canvas as excalidraw, json, svg, and png.
+Export the current canvas as excalidraw, json, svg, png, and animated html.
 ```
 
 ## Working With Projects
@@ -281,6 +290,10 @@ Implemented tools:
 | `focus_excalidraw_viewport` | Focus the visible canvas on a scene rectangle |
 | `export_excalidraw_scene` | Export `.excalidraw`, JSON, or basic SVG |
 
+The in-browser Export menu additionally supports PNG, SVG, JSON, `.excalidraw`,
+and animated HTML files. Animated HTML exports are saved under the active
+project's `canvas/excalidraw/exports/` directory and opened as a local preview.
+
 ## Development
 
 Useful commands:
@@ -301,8 +314,8 @@ Script overview:
 | `npm run dev` | Start the Vite canvas app |
 | `./scripts/start-canvas.sh <projectDir>` | Start the project-scoped canvas service |
 | `./scripts/start-mcp.sh` | Start the MCP server used by the plugin |
-| `npm test` | Run source constraints, layout checks, and MCP/API flow tests |
-| `npm run test:e2e` | Run real Chrome E2E tests against a temporary canvas |
+| `npm test` | Run source constraints, layout checks, animated export tests, and MCP/API flow tests |
+| `npm run test:e2e` | Run browser E2E tests against a temporary canvas, including animated HTML export |
 | `npm run test:real-executor` | Trigger the real Codex CLI executor and keep screenshots |
 | `npm run test:all` | Run MCP/API tests plus browser E2E |
 | `npm run build` | Build the frontend bundle |
@@ -314,6 +327,8 @@ Script overview:
 - Edits require structural targets: selection, element IDs, comment targets,
   action targets, or `customData.codex.semanticId`.
 - The MCP layer does not route edits by fuzzy element text or comment text.
+- Animated export routing reads structured motion metadata and element geometry,
+  not prompt text or rendered labels.
 - Checkpoints are project-local, so risky edits can be reviewed or restored.
 - The core canvas does not require a paid API key. AI model and image generation
   costs depend on the Codex provider or image model you choose.
@@ -330,8 +345,9 @@ Script overview:
 
 This repository contains the current local MVP and Codex plugin scaffold. The
 canvas, skills, MCP server, project-local storage, comment execution loop,
-image insertion, exports, and browser E2E coverage are in place. Treat it as
-pre-release until marketplace packaging and public distribution are finalized.
+image insertion, animated/static exports, and browser E2E coverage are in
+place. Treat it as pre-release until marketplace packaging and public
+distribution are finalized.
 
 ## License
 
